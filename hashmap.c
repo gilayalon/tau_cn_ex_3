@@ -1,13 +1,5 @@
-/*
- * HashMap.c
- *
- *  Created on: Jan 9, 2013
- *      Author: avi
- */
-
-#include "LinkedList.h"
-#include "HashMap.h"
-
+#include "list.h"
+#include "hashmap.h"
 
 /*
  * DJB2 - Hash function implementation

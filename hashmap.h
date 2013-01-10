@@ -1,16 +1,10 @@
-/*
- * HashMap.h
- *
- *  Created on: Jan 9, 2013
- *      Author: avi
- */
-
 #ifndef HASHMAP_H_
 #define HASHMAP_H_
+
+#include "list.h"
+
 #define MAX_ELEMENTS 5000
 #define HASH_SIZE (MAX_ELEMENTS / 5)
-
-typedef int list_elem;
 
 /*
  * hash element has:
