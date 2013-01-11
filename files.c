@@ -1,9 +1,10 @@
 #include "files.h"
 
-int hash(const char* filename)
+int hash(void* key)
 {
 	int c;
 	unsigned int hash = 5831;
+	char *filename = (char *)key;
 
 	while ((c = *filename++))
 	{

@@ -3,28 +3,23 @@
 
 #include "list.h"
 
-#define MAX_ELEMENTS 5000
-#define HASH_SIZE (MAX_ELEMENTS / 5)
-
-/*
- * hash element has:
- */
-typedef struct _hash_elem
+typedef struct hashItem
 {
-	list_elem* val_lst;
-}HashElement;
+	list *item;
+} hashItem;
 
-
-typedef struct _hash_map
+typedef struct hashMap
 {
 	int max_size;
 	int curr_size;
-	HashElement* hashmap;
-}HashMap;
+	int (*hash)(void *);
+	hashItem *hashmap;
+} hashMap;
 
-int init(HashMap* map);
+hashMap init(int size, int (*hash)(void *));
+void put(hashMap *map, void *key, void *data);
+void *get(hashMap *map, void *key);
+void remove(hashMap *map, void  *key);
+void clearMap(hashMap *map);
 
-
-
-
-#endif /* HASHMAP_H_ */
+#endif

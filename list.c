@@ -1,9 +1,10 @@
 #include "list.h"
 
-listItem *createNew(void *data) {
+listItem *createNew(void *key, void *data) {
 	listItem *result;
 
 	result = (listItem *)malloc(sizeof(listItem));
+	result->key = key;
 	result->data = data;
 	result->next = NULL;
 	result->prev = NULL;
@@ -12,24 +13,35 @@ listItem *createNew(void *data) {
 }
 
 list createList() {
-	list result;
+	list *result;
 
-	result.head = createNew('$');
-	result.tail = createNew('$');
+	result = (list *)malloc(sizeof(list));
 
-	result.head->next = result.tail;
-	result.tail->prev = result.head;
+	result->head = createNew(-1, '$');
+	result->tail = createNew(-1, '$');
+
+	result->head->next = result->tail;
+	result->tail->prev = result->head;
 
 	return result;
 }
 
-void addItem(list *lst, void *data) {
-	listItem *newItem = createNew(data);
+void addFirst(list *lst, void *key, void *data) {
+	listItem *newItem = createNew(key, data);
 
 	newItem->next = lst->head->next;
 	newItem->prev = lst->head;
 	lst->head->next->prev = newItem;
 	lst->head->next = newItem;
+}
+
+void addLast(list *lst, void *key, void *data) {
+	listItem *newItem = createNew(key, data);
+
+	newItem->next = lst->tail;
+	newItem->prev = lst->tail->prev;
+	lst->tail->prev->next = newItem;
+	lst->tail->prev = newItem;
 }
 
 void removeItem(listItem *item) {
@@ -41,6 +53,16 @@ void removeItem(listItem *item) {
 	}
 }
 
+listItem *find(list *lst, void *key) {
+	listItem *temp = lst->head;
+
+	for (; temp->next != lst->tail; temp = temp->next) {
+		if (temp->key == key) return temp;
+	}
+
+	return NULL;
+}
+
 void delete(listItem *head) {
 	if (head != NULL) {
 		deleteList(head->next);
@@ -50,4 +72,8 @@ void delete(listItem *head) {
 
 void deleteList(list *lst) {
 	delete(lst->head);
+}
+
+int isEmpty(list *lst) {
+	return (lst->head->next == lst->tail);
 }

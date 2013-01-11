@@ -7,12 +7,12 @@
 #define MAX_ELEMENTS 5000
 #define HASH_SIZE 997
 
-typedef struct hashItem
+typedef struct file
 {
 	char *filename;
-	hashmap *clients;
-} hashItem;
+	list *clients;
+} file;
 
-int hash(const char* filename);
+int hash(void *key);
 
 #endif

@@ -6,6 +6,7 @@
 
 typedef struct listItem
 {
+	void *key;
 	void *data;
 	struct listItem *prev;
 	struct listItem *next;
@@ -17,11 +18,14 @@ typedef struct list
 	listItem *tail;
 } list;
 
-listItem *createNew(void *data);
-list createList();
-void addItem(list *lst, void *data);
+listItem *createNew(void *key, void *data);
+list *createList();
+void addFirst(list *lst, void *key, void *data);
+void addLast(list *lst, void *key, void *data);
 void removeItem(listItem *item);
+listItem *find(list *lst, void *key);
 void delete(listItem *head);
 void deleteList(list *lst);
+int isEmpty(list *lst);
 
 #endif

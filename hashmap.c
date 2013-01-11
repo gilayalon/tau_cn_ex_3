@@ -1,73 +1,50 @@
-#include "list.h"
 #include "hashmap.h"
 
-/*
- * DJB2 - Hash function implementation
- */
-int hash(const char* str)
-{
-	unsigned int hash = 5831;
-	int c;
-	while (c = *str++)
-	{
-		hash = ((hash << 5) + hash) + c; /* hash + 33 + c */
-	}
-	return hash;
+hashMap init(int size, int (*hash)(void *)) {
+	hashMap map;
+
+	map.max_size = size;
+	map.curr_size = 0;
+	map.hash = hash;
+	map.hashmap = (hashItem *)malloc(size * sizeof(hashItem));
+
+	return map;
 }
 
-
-int init(HashMap* map)
-{
-	map->hashmap = (HashMap*)malloc(HASH_SIZE * sizeof(HashElement));
-	if ( map->hashmap )
-	{
-		map->max_size = HASH_SIZE;
-		map->curr_size = 0;
-		return 0;
-	}
-	return -1;
-}
-
-int hash_map_free(HashMap* map)
+void clearMap(hashMap* map)
 {
 	int i;
-	int max = map->max_size; /*TODO: might want to change to curr_size??? */
-	for (i = 0; i < max; ++i) {
-		ListFree( map->hashmap[i].val_lst);
+
+	for (i = 0; i < map->max_size; i++) {
+		if (map->hashmap[i]->item != NULL)
+			deleteList(map->hashmap[i]->item);
+			free(map->hashmap[i]->item);
 	}
+
 	free (map->hashmap);
-	return 0;
 }
 
-int put(HashMap* map, char* key, HashElement* elem)
-{
-	int i = hash(key);
-	/* I assume that 'ListAppend' will return 0 for success */
-	if ( ! map->hashmap[i].ListAppend(elem) )
-	{
-		map->curr_size += 1;
-		return 0;
-	}
-	return -1;
+void put(hashMap *map, void *key, void *data) {
+	int i = map->hash(key);
+
+	if (map->hashmap[i]->item == NULL) map->hashmap[i]->item = createList();
+	addFirst(map->hashmap[i]->item, key, data);
+	map->curr_size++;
 }
-int get(HashMap* map, char* key, HashElement* value)
+
+void *get(hashMap *map, void *key)
 {
-	int i = hash(key);
-	if ( map->hashmap[i].val_lst )
-	{
-		/*search in short list if not found return -1 as well*/
-		return 0;
-	}
-	return -1;
+	int i = map->hash(key);
+
+	list *l = map->hashmap[i]->item;
+	return find(l, key);
 }
-int remove(HashMap* map, char* key)
+
+void remove(hashMap* map, char* key)
 {
-	int i = hash(key);
-	if ( map->hashmap[i].val_lst )
-	{
-		/*remove key from val_lst */
-		map->curr_size -= 1;
-		return 0
+	listItem temp = get(map, key);
+	if (temp != NULL) {
+		removeItem(temp);
+		map->curr_size--;
 	}
-	return -1;
 }

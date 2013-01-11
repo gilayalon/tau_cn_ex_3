@@ -3,15 +3,22 @@
 
 #include "list.h"
 
-#define MAX_ELEMENTS 100
-#define HASH_SIZE 97
-
-typedef struct hashItem
+typedef struct client
 {
 	unsigned int id;
-	struct sockaddr_in *peer;
-} hashItem;
+	struct sockaddr_in *address;
+} client;
 
-int hash(const int id);
+typedef struct clientList
+{
+	list *lst;
+} clientList;
+
+client *createClient(unsigned int id, struct sockaddr_in *address);
+clientList *initClients();
+void addClient(clientList *clients, client *c);
+void removeClient(clientList *clients, unsigned int id);
+client *getClient(clientList *clients, unsigned int id);
+int isClientListEmpty(clientList *clients);
 
 #endif /* CLIENTS_H_ */
