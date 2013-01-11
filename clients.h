@@ -1,6 +1,7 @@
 #ifndef CLIENTS_H_
 #define CLIENTS_H_
 
+#include <netinet/in.h>
 #include "list.h"
 
 typedef struct client

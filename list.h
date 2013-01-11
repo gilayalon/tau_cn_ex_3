@@ -18,7 +18,7 @@ typedef struct list
 	listItem *tail;
 } list;
 
-listItem *createNew(void *key, void *data);
+listItem *createItem(void *key, void *data);
 list *createList();
 void addFirst(list *lst, void *key, void *data);
 void addLast(list *lst, void *key, void *data);

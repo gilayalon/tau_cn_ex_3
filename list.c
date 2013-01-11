@@ -1,9 +1,8 @@
 #include "list.h"
 
-listItem *createNew(void *key, void *data) {
-	listItem *result;
+listItem *createItem(void *key, void *data) {
+	listItem *result = (listItem *)malloc(sizeof(listItem));
 
-	result = (listItem *)malloc(sizeof(listItem));
 	result->key = key;
 	result->data = data;
 	result->next = NULL;
@@ -13,12 +12,10 @@ listItem *createNew(void *key, void *data) {
 }
 
 list createList() {
-	list *result;
+	list *result = (list *)malloc(sizeof(list));
 
-	result = (list *)malloc(sizeof(list));
-
-	result->head = createNew(-1, '$');
-	result->tail = createNew(-1, '$');
+	result->head = createItem(-1, '$');
+	result->tail = createItem(-1, '$');
 
 	result->head->next = result->tail;
 	result->tail->prev = result->head;
@@ -27,7 +24,7 @@ list createList() {
 }
 
 void addFirst(list *lst, void *key, void *data) {
-	listItem *newItem = createNew(key, data);
+	listItem *newItem = createItem(key, data);
 
 	newItem->next = lst->head->next;
 	newItem->prev = lst->head;
@@ -36,7 +33,7 @@ void addFirst(list *lst, void *key, void *data) {
 }
 
 void addLast(list *lst, void *key, void *data) {
-	listItem *newItem = createNew(key, data);
+	listItem *newItem = createItem(key, data);
 
 	newItem->next = lst->tail;
 	newItem->prev = lst->tail->prev;

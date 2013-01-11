@@ -1,9 +1,7 @@
 #include "clients.h"
 
 client *createClient(unsigned int id, struct sockaddr_in *address) {
-	client *c;
-
-	c = (client *)malloc(sizeof(client));
+	client *c = (client *)malloc(sizeof(client));
 
 	c->id = id;
 	c->address = address;
@@ -12,9 +10,7 @@ client *createClient(unsigned int id, struct sockaddr_in *address) {
 }
 
 clientList *initClients() {
-	clientList *l;
-
-	l = (clientList *)malloc(sizeof(clientList));
+	clientList *l = (clientList *)malloc(sizeof(clientList));
 
 	l->lst = createList();
 
