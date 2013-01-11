@@ -1,54 +1,50 @@
 #include "hashmap.h"
 
-hashMap createHash(int size, int (*hash)(void *)) {
-	hashMap map;
+hashMap *createHash(int size, int (*hash)(void *)) {
+	hashMap *hashmap = (hashMap *)malloc(sizeof(hashMap));
 
-	map.max_size = size;
-	map.curr_size = 0;
-	map.hash = hash;
-	map.hashmap = (list **)malloc(size * sizeof(list *));
+	hashmap->max_size = size;
+	hashmap->curr_size = 0;
+	hashmap->hash = hash;
+	hashmap->map = (list **)malloc(size * sizeof(list *));
 
-	return map;
+	return hashmap;
 }
 
-void clearMap(hashMap* map)
+void clearMap(hashMap* hashmap)
 {
 	int i;
 
-	for (i = 0; i < map->max_size; i++) {
-		if (map->hashmap[i] != NULL)
-			deleteList(map->hashmap[i]);
-			free(map->hashmap[i]);
+	for (i = 0; i < hashmap->max_size; i++) {
+		if (hashmap->map[i] != NULL)
+			clearList(hashmap->map[i]->head);
+			free(hashmap->map[i]);
 	}
 
-	free (map->hashmap);
+	free (hashmap->map);
 }
 
-void put(hashMap *map, void *key, void *data) {
-	int i = map->hash(key);
+void put(hashMap *hashmap, void *key, void *data) {
+	int i = hashmap->hash(key);
 
-	if (map->hashmap[i] == NULL) map->hashmap[i] = createList();
-	addFirst(map->hashmap[i], key, data);
-	map->curr_size++;
+	if (hashmap->map[i] == NULL) hashmap->map[i] = createList();
+	addFirst(hashmap->map[i], key, data);
+	hashmap->curr_size++;
 }
 
-listItem *get(hashMap *map, void *key)
+listItem *get(hashMap *hashmap, void *key)
 {
-	int i = map->hash(key);
+	int i = hashmap->hash(key);
+	list *l = hashmap->map[i];
 
-	list *l = map->hashmap[i];
 	return find(l, key);
 }
 
-void removeElement(hashMap *map, listItem *elm) {
+void removeElement(hashMap *hashmap, void *key) {
+	listItem *elm = get(hashmap, key);
+
 	if (elm != NULL) {
 		removeItem(elm);
-		map->curr_size--;
+		hashmap->curr_size--;
 	}
-}
-
-void remove(hashMap *map, char* key)
-{
-	listItem *elm = get(map, key);
-	removeElement(map, elm);
 }

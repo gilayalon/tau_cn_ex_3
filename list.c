@@ -11,11 +11,11 @@ listItem *createItem(void *key, void *data) {
 	return result;
 }
 
-list createList() {
+list *createList() {
 	list *result = (list *)malloc(sizeof(list));
 
-	result->head = createItem(-1, '$');
-	result->tail = createItem(-1, '$');
+	result->head = createItem(NULL, NULL);
+	result->tail = createItem(NULL, NULL);
 
 	result->head->next = result->tail;
 	result->tail->prev = result->head;
@@ -60,15 +60,11 @@ listItem *find(list *lst, void *key) {
 	return NULL;
 }
 
-void delete(listItem *head) {
+void clearList(listItem *head) {
 	if (head != NULL) {
-		deleteList(head->next);
+		clearList(head->next);
 		free(head);
 	}
-}
-
-void deleteList(list *lst) {
-	delete(lst->head);
 }
 
 int isEmpty(list *lst) {

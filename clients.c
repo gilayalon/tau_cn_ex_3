@@ -9,28 +9,16 @@ client *createClient(unsigned int id, struct sockaddr_in *address) {
 	return c;
 }
 
-clientList *initClients() {
-	clientList *l = (clientList *)malloc(sizeof(clientList));
-
-	l->lst = createList();
-
-	return l;
+void addClient(list *clients, client *c) {
+	addLast(clients, &(c->id), c->address);
 }
 
-void addClient(clientList *clients, client *c) {
-	addLast(clients->lst, c->id, c->address);
+void removeClient(list *clients, unsigned int id) {
+	listItem *c = find(clients, &id);
+	removeItem(c);
 }
 
-void removeClient(clientList *clients, unsigned int id) {
-	listItem temp = find(clients->lst, id);
-	removeItem(temp);
-}
-
-client *getClient(clientList *clients, unsigned int id) {
-	listItem temp = find(clients->lst, id);
-	return createClient(temp.key, temp.data);
-}
-
-int isClientListEmpty(clientList *clients) {
-	return isEmpty(clients->lst);
+client *getClient(list *clients, unsigned int id) {
+	listItem *c = find(clients, &id);
+	return createClient((unsigned int)c->key, (struct sockaddr_in *)c->data);
 }

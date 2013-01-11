@@ -10,16 +10,9 @@ typedef struct client
 	struct sockaddr_in *address;
 } client;
 
-typedef struct clientList
-{
-	list *lst;
-} clientList;
-
 client *createClient(unsigned int id, struct sockaddr_in *address);
-clientList *initClients();
-void addClient(clientList *clients, client *c);
-void removeClient(clientList *clients, unsigned int id);
-client *getClient(clientList *clients, unsigned int id);
-int isClientListEmpty(clientList *clients);
+client *getClient(list *clients, unsigned int id);
+void addClient(list *clients, client *c);
+void removeClient(list *clients, unsigned int id);
 
 #endif /* CLIENTS_H_ */

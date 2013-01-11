@@ -13,18 +13,13 @@ typedef struct file
 	list *clients;
 } file;
 
-typedef struct fileHash
-{
-	hashMap *map;
-} fileHash;
+file *createFile(char *filename, list *clients);
+file *getFile(hashMap *files, char *filename);
+void addFile(hashMap *files, file *f);
+void removeFile(hashMap *files, char *filename);
+void clearFiles(hashMap *files);
 
+char **getFileList(hashMap *files);
 int hash(void *key);
-file *createFile(char *filename);
-fileHash *initFiles();
-void addFile(fileHash *files, file *f);
-void removeFile(fileHash *files, char *filename);
-file *getFile(fileHash *files, char *filename);
-char **getFileList(fileHash *files);
-void deleteFiles(fileHash *files);
 
 #endif

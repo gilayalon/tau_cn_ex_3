@@ -18,14 +18,13 @@ typedef struct list
 	listItem *tail;
 } list;
 
-listItem *createItem(void *key, void *data);
 list *createList();
+listItem *createItem(void *key, void *data);
+listItem *find(list *lst, void *key);
 void addFirst(list *lst, void *key, void *data);
 void addLast(list *lst, void *key, void *data);
 void removeItem(listItem *item);
-listItem *find(list *lst, void *key);
-void delete(listItem *head);
-void deleteList(list *lst);
+void clearList(listItem *head);
 int isEmpty(list *lst);
 
 #endif

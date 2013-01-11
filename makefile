@@ -1,22 +1,22 @@
-all: main
+all: test
 
 clean:
-	-rm main.o main files.o clients.o list.o hashmap.o
+	-rm test.o test files.o clients.o list.o hashmap.o
 
-main: main.o clients.o files.o
-	gcc -pedantic-errors -g -lm -o main main.o clients.o files.o
+test: test.o files.o clients.o hashmap.o list.o
+	gcc -pedantic-errors -g -lm -o test test.o files.o clients.o hashmap.o list.o
 
-main.o: main.c files.h clients.h
-	gcc -pedantic-errors -g -lm -o main.c
+test.o: test.c files.h clients.h
+	gcc -pedantic-errors -c -Wall -g test.c
 
 files.o: files.c files.h list.h hashmap.h
 	gcc -pedantic-errors -c -Wall -g files.c
 
-clients.o: clients.c clients.h list.h hashmap.h
+clients.o: clients.c clients.h list.h
 	gcc -pedantic-errors -c -Wall -g clients.c
+
+hashmap.o: hashmap.c hashmap.h list.h
+	gcc -pedantic-errors -c -Wall -g hashmap.c
 
 list.o: list.c list.h
 	gcc -pedantic-errors -c -Wall -g list.c
-
-hashmap.o: hashmap.c hashmap.h
-	gcc -pedantic-errors -c -Wall -g hashmap.c
