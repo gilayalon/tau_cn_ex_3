@@ -1,22 +1,31 @@
-all: test
+all: server
 
 clean:
-	-rm test.o test files.o clients.o list.o hashmap.o
+	-rm server.o server mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
 
-test: test.o files.o clients.o hashmap.o list.o
-	gcc -pedantic-errors -g -lm -o test test.o files.o clients.o hashmap.o list.o
+server: server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
+	gcc -pedantic-errors -g -lm -o server server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
 
-test.o: test.c files.h clients.h
-	gcc -pedantic-errors -c -Wall -g test.c
+server.o: server.c server.h mds.h
+	gcc -pedantic-errors -c -Wall -g server.c
 
-files.o: files.c files.h list.h hashmap.h
-	gcc -pedantic-errors -c -Wall -g files.c
+mds.o: mds.c mds.h fileHash.h clientHash.h
+	gcc -pedantic-errors -c -Wall -g mds.c
 
-clients.o: clients.c clients.h list.h
-	gcc -pedantic-errors -c -Wall -g clients.c
+fileHash.o: fileHash.c fileHash.h fileList.h
+	gcc -pedantic-errors -c -Wall -g fileHash.c
 
-hashmap.o: hashmap.c hashmap.h list.h
-	gcc -pedantic-errors -c -Wall -g hashmap.c
+clientHash.o: clientHash.c clientHash.h clientList.h
+	gcc -pedantic-errors -c -Wall -g clientHash.c
 
-list.o: list.c list.h
-	gcc -pedantic-errors -c -Wall -g list.c
+fileList.o: fileList.c fileList.h clientLinkList.h
+	gcc -pedantic-errors -c -Wall -g fileList.c
+
+clientList.o: clientList.c clientList.h fileLinkList.h
+	gcc -pedantic-errors -c -Wall -g clientList.c
+
+fileLinkList.o: fileLinkList.c fileLinkList.h fileList.h
+	gcc -pedantic-errors -c -Wall -g fileLinkList.c
+
+clientLinkList.o: clientLinkList.c clientLinkList.h
+	gcc -pedantic-errors -c -Wall -g clientLinkList.c
