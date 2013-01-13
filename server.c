@@ -1,6 +1,9 @@
 #include "server.h"
 
 int main() {
+	int i;
+	char **flist;
+
 	file *f1 = fl_createItem("README.txt", NULL);
 	file *f2 = fl_createItem("TEST.jpg", NULL);
 	file *f3 = fl_createItem("WALLPAPER.png", NULL);
@@ -25,6 +28,12 @@ int main() {
 	printf("possible client for file %s = %d\n", f3->filename, mds_get(f3)->id);
 	printf("possible client for file %s = %d\n", f3->filename, mds_get(f3)->id);
 	printf("possible client for file %s = %d\n", f3->filename, mds_get(f3)->id);
+
+	flist = mds_get_file_list();
+	for (i = 0; i < mds_get_size(); i++) {
+		printf("%s\n", flist[i]);
+	}
+	free(flist);
 
 	mds_clear();
 

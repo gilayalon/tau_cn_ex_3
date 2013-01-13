@@ -56,6 +56,26 @@ client *mds_get(file *f) {
 	return c;
 }
 
+char **mds_get_file_list() {
+	int i;
+	file *f;
+	int j = 0;
+
+
+	char **fileList = (char **)malloc(mds_files->curr_size * sizeof(char *));
+
+	for (i = 0; i < mds_files->max_size; i++) {
+		if (mds_files->map[i] != NULL) {
+			f = mds_files->map[i]->head->next;
+			for (; f != mds_files->map[i]->tail; f = f->next) {
+				fileList[j++] = f->filename;
+			}
+		}
+	}
+
+	return fileList;
+}
+
 void mds_remove(client *c) {
 	file *f;
 	clientLink *cl;
@@ -84,4 +104,11 @@ void mds_remove(client *c) {
 void mds_clear() {
 	fh_clear(mds_files);
 	ch_clear(mds_clients);
+
+	free(mds_files);
+	free(mds_clients);
+}
+
+int mds_get_size() {
+	return mds_files->curr_size;
 }
