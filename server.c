@@ -29,6 +29,13 @@ int main() {
 	printf("possible client for file %s = %d\n", f3->filename, mds_get(f3)->id);
 	printf("possible client for file %s = %d\n", f3->filename, mds_get(f3)->id);
 
+	mds_remove(c3);
+
+	printf("possible client for file %s = %d\n", f1->filename, mds_get(f1)->id);
+	printf("possible client for file %s = %d\n", f1->filename, mds_get(f1)->id);
+	printf("possible client for file %s = %d\n", f1->filename, mds_get(f1)->id);
+
+
 	flist = mds_get_file_list();
 	for (i = 0; i < mds_get_size(); i++) {
 		printf("%s\n", flist[i]);

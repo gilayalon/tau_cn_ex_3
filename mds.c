@@ -82,7 +82,7 @@ void mds_remove(client *c) {
 	fileLink *iter;
 
 	if (ch_get(mds_clients, c->id) != NULL) {
-		iter = c->files->head;
+		iter = c->files->head->next;
 		for (; iter != c->files->tail; iter = iter->next) {
 			f = iter->f;
 			cl = f->clients->head;
