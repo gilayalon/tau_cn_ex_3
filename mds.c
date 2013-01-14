@@ -41,11 +41,19 @@ void mds_put(client *c, file *f) {
 	}
 }
 
-client *mds_get(file *f) {
+void mds_put_client(client *c) {
+	if (ch_get(mds_clients, c->id) == NULL) {
+		ch_put(mds_clients, c);
+		c->files = fll_create();
+	}
+}
+
+client *mds_get(char *filename) {
 	clientLink *cl;
 	client *c = NULL;
+	file *f = fh_get(mds_files, filename);
 
-	if (fh_get(mds_files, f->filename) != NULL) {
+	if (f != NULL) {
 		cl = f->clients->head->next;
 		c = cl->c;
 		cll_remove(cl);
@@ -54,6 +62,14 @@ client *mds_get(file *f) {
 	}
 
 	return c;
+}
+
+client *mds_get_client(int id) {
+	return ch_get(mds_clients, id);
+}
+
+file *mds_get_file(char *filename) {
+	return fh_get(mds_files, filename);
 }
 
 char **mds_get_file_list() {

@@ -1,12 +1,16 @@
-all: server
+all: file_server file_client
 
 clean:
-	-rm server.o server mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
+	-rm server.o file_server mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o
+	-rm client.o file_client
 
-server: server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
-	gcc -pedantic-errors -g -lm -o server server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o
+file_server: server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o
+	gcc -pedantic-errors -g -lm -o file_server server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o -lpthread
 
-server.o: server.c server.h mds.h
+file_client: client.o helpers.o
+	gcc -pedantic-errors -g -lm -o file_client client.o helpers.o
+
+server.o: server.c server.h mds.h helpers.h
 	gcc -pedantic-errors -c -Wall -g server.c
 
 mds.o: mds.c mds.h fileHash.h clientHash.h
@@ -29,3 +33,6 @@ fileLinkList.o: fileLinkList.c fileLinkList.h fileList.h
 
 clientLinkList.o: clientLinkList.c clientLinkList.h
 	gcc -pedantic-errors -c -Wall -g clientLinkList.c
+
+helpers.o: helpers.c helpers.h
+	gcc -pedantic-errors -c -Wall -g helpers.c

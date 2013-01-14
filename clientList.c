@@ -3,8 +3,8 @@
 clientList *cl_create() {
 	clientList *list = (clientList *)malloc(sizeof(clientList));
 
-	list->head = cl_createItem(-1, -1, -1, NULL, NULL);
-	list->tail = cl_createItem(-1, -1, -1, NULL, NULL);
+	list->head = cl_createItem(-1, -1, NULL, NULL);
+	list->tail = cl_createItem(-1, -1, NULL, NULL);
 
 	list->head->next = list->tail;
 	list->tail->prev = list->head;
@@ -12,11 +12,10 @@ clientList *cl_create() {
 	return list;
 }
 
-client *cl_createItem(int id, int thread_fd, int socket_fd, struct sockaddr_in *address, fileLinkList *files) {
+client *cl_createItem(int id, int socket_fd, struct sockaddr_in *address, fileLinkList *files) {
 	client *c = (client *)malloc(sizeof(client));
 
 	c->id = id;
-	c->thread_fd = thread_fd;
 	c->socket_fd = socket_fd;
 
 	if (address != NULL) {
