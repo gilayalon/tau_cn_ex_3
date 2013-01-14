@@ -1,22 +1,38 @@
-all: test
+all: file_server file_client
 
 clean:
-	-rm test.o test files.o clients.o list.o hashmap.o
+	-rm server.o file_server mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o
+	-rm client.o file_client
 
-test: test.o files.o clients.o hashmap.o list.o
-	gcc -pedantic-errors -g -lm -o test test.o files.o clients.o hashmap.o list.o
+file_server: server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o
+	gcc -pedantic-errors -g -lm -o file_server server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o -lpthread
 
-test.o: test.c files.h clients.h
-	gcc -pedantic-errors -c -Wall -g test.c
+file_client: client.o helpers.o
+	gcc -pedantic-errors -g -lm -o file_client client.o helpers.o
 
-files.o: files.c files.h list.h hashmap.h
-	gcc -pedantic-errors -c -Wall -g files.c
+server.o: server.c server.h mds.h helpers.h
+	gcc -pedantic-errors -c -Wall -g server.c
 
-clients.o: clients.c clients.h list.h
-	gcc -pedantic-errors -c -Wall -g clients.c
+mds.o: mds.c mds.h fileHash.h clientHash.h
+	gcc -pedantic-errors -c -Wall -g mds.c
 
-hashmap.o: hashmap.c hashmap.h list.h
-	gcc -pedantic-errors -c -Wall -g hashmap.c
+fileHash.o: fileHash.c fileHash.h fileList.h
+	gcc -pedantic-errors -c -Wall -g fileHash.c
 
-list.o: list.c list.h
-	gcc -pedantic-errors -c -Wall -g list.c
+clientHash.o: clientHash.c clientHash.h clientList.h
+	gcc -pedantic-errors -c -Wall -g clientHash.c
+
+fileList.o: fileList.c fileList.h clientLinkList.h
+	gcc -pedantic-errors -c -Wall -g fileList.c
+
+clientList.o: clientList.c clientList.h fileLinkList.h
+	gcc -pedantic-errors -c -Wall -g clientList.c
+
+fileLinkList.o: fileLinkList.c fileLinkList.h fileList.h
+	gcc -pedantic-errors -c -Wall -g fileLinkList.c
+
+clientLinkList.o: clientLinkList.c clientLinkList.h
+	gcc -pedantic-errors -c -Wall -g clientLinkList.c
+
+helpers.o: helpers.c helpers.h
+	gcc -pedantic-errors -c -Wall -g helpers.c
