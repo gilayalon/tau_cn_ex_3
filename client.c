@@ -12,6 +12,8 @@ int main(int argc, char **argv) {
 	struct sockaddr_in server_addr;
 	struct addrinfo hints, *result;
 	
+	/* open thread to handle incoming requests */
+
 	if (argc == 4) {
 		port = strToInt(argv[3]);
 		if (port == -1) {
@@ -156,15 +158,17 @@ void getFile(int socket, char *path, char *filename) {
 		send(socket, "GET", CMD, 0);
 		send(socket, filename, BUFSIZE, 0);
 
-		bytesRead = recv(socket, rBuffer, CMD, 0);
+		bytesRead = recv(socket, rBuffer, BUFSIZE, 0);
 		rBuffer[bytesRead] = '\0';
 		if (strcmp(rBuffer, "ERR") == 0) {
 			recv(socket, rBuffer, BUFSIZE, 0);
-			printf("Server Error: %s.\n", rBuffer);
+			printf("Server Error: %s\n", rBuffer);
 			remove(fullpath);
 		} else {
 			server_addr.sin_family = AF_INET;
 			server_addr.sin_addr.s_addr = inet_addr(rBuffer);
+			memset(&rBuffer, 0, sizeof(rBuffer));
+
 			recv(socket, rBuffer, BUFSIZE, 0);
 			server_addr.sin_port = strToInt(rBuffer);
 
