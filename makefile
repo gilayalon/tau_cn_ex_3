@@ -8,7 +8,7 @@ file_server: server.o mds.o fileHash.o clientHash.o fileList.o clientList.o file
 	gcc -pedantic-errors -g -lm -o file_server server.o mds.o fileHash.o clientHash.o fileList.o clientList.o fileLinkList.o clientLinkList.o helpers.o -lpthread
 
 file_client: client.o helpers.o
-	gcc -pedantic-errors -g -lm -o file_client client.o helpers.o
+	gcc -pedantic-errors -g -lm -o file_client client.o helpers.o -lpthread
 
 server.o: server.c server.h mds.h helpers.h
 	gcc -pedantic-errors -c -Wall -g server.c

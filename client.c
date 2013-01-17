@@ -1,18 +1,97 @@
 #include "client.h"
 
+void *sendFileThread(void *param) {
+	FILE* fp;
+	char *fullpath;
+	char sBuffer[BUFSIZE];
+	char filename[BUFSIZE];
+	int bytesRead, bytesSent;
+	int socket = *(int*)param;
+
+	assert(pthread_mutex_lock(&m) == 0);
+	in_process++;
+	assert(pthread_mutex_unlock(&m) == 0);
+
+	/*get the requested file name */
+	recv(socket,filename, BUFSIZE, 0);
+	printf("client requested %s file\n", filename);
+
+	fullpath = (char *)malloc((strlen(path) + strlen(filename) + 1) * sizeof(char));
+	strcpy(fullpath, path);
+	strcat(fullpath, filename);
+
+	bytesSent = 0;
+	fp = fopen(fullpath, "r");
+	memset(sBuffer,'0', BUFSIZE);
+	while ((bytesRead = fread(sBuffer, sizeof(char), BUFSIZE, fp) > 0)){
+		bytesSent += send(socket, sBuffer, BUFSIZE,0);
+		memset(sBuffer, '0', BUFSIZE);
+	}
+	send (socket, "TRM", CMD, 0);
+	free (fullpath);
+
+	assert(pthread_mutex_lock(&m) == 0);
+	in_process--;
+	assert(pthread_mutex_unlock(&m) == 0);
+
+	if (in_process == 0) {
+		assert(pthread_cond_signal(&in_process_condition) == 0);
+	}
+
+	return NULL;
+}
+
+void *serverThread() {
+	int lSock, cSock;
+	pthread_t cThread;
+	unsigned int client;
+	struct sockaddr_in server_addr, client_addr;
+
+	lSock = socket(PF_INET, SOCK_STREAM, 0);
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(LISTEN_PORT);
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	bind(lSock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+	listen(lSock, TCP_LISTEN_BACKLOG);
+
+	while (!done) {
+		client = sizeof(client_addr);
+		cSock = accept(lSock, (struct sockaddr*)&client_addr, &client);
+		assert(pthread_create(&cThread, NULL, sendFileThread, &cSock) == 0);
+		sleep(2);
+	}
+
+	if (in_process > 0) {
+		assert(pthread_mutex_lock(&m) == 0);
+		assert(pthread_cond_wait(&in_process_condition, &m) == 0);
+		assert(pthread_mutex_unlock(&m) == 0);
+	}
+
+	assert(pthread_cond_signal(&all_complete_condition) == 0);
+
+	return NULL;
+}
+
 int main(int argc, char **argv) {
 	int go = 1;
+	char *param;
 	char *command;
 	int port = PORT;
 	int sSock, lSock;
+	pthread_t sThread;
 	char input[USERIO];
-	char *param, *path;
 	char rBuffer[BUFSIZE];
 	char *hostname = "localhost";
 	struct sockaddr_in server_addr;
 	struct addrinfo hints, *result;
 	
-	/* open thread to handle incoming requests */
+    assert(pthread_mutex_init(&m, NULL) == 0);
+	assert(pthread_cond_init(&in_process_condition, NULL) == 0);
+	assert(pthread_cond_init(&all_complete_condition, NULL) == 0);
+
+	assert(pthread_create(&sThread, NULL, serverThread, NULL) == 0);
 
 	if (argc == 4) {
 		port = strToInt(argv[3]);
@@ -90,6 +169,15 @@ int main(int argc, char **argv) {
 		}
 
 		freeaddrinfo(result);
+		done = 1;
+
+		assert(pthread_mutex_lock(&m) == 0);
+		assert(pthread_cond_wait(&all_complete_condition, &m) == 0);
+		assert(pthread_mutex_unlock(&m) == 0);
+
+		pthread_mutex_destroy(&m);
+		pthread_cond_destroy(&in_process_condition);
+		pthread_cond_destroy(&all_complete_condition);
 
 	} else {
 		printf(	"Error: Wrong number of arguments. Usage: file_client <dir> [hostname] [port].\n");
