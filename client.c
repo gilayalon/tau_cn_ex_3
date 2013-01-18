@@ -68,7 +68,6 @@ void *serverThread(void *param) {
 		assert(select(FD_SETSIZE, &read_fd_set, NULL, NULL, &timeout) != -1);
 
 		if (FD_ISSET(lSock, &read_fd_set)) {
-			printf("!\n");
 			client = sizeof(client_addr);
 			cSock = accept(lSock, (struct sockaddr*)&client_addr, &client);
 			assert(pthread_create(&cThread, NULL, sendFileThread, &cSock) == 0);
@@ -239,6 +238,7 @@ void listDirectory(int sock, char *path) {
 
 void getFile(int sock, char *path, char *filename) {
 	int s;
+	int rc;
 
 	FILE *fp = NULL;
 	char rBuffer[BUFSIZE];
@@ -265,7 +265,7 @@ void getFile(int sock, char *path, char *filename) {
 		rBuffer[bytesRead] = '\0';
 		if (strcmp(rBuffer, "ERR") == 0) {
 			recv(sock, rBuffer, BUFSIZE, 0);
-			printf("Server Error: %s\n", rBuffer);
+			printf("%s\n", rBuffer);
 			remove(fullpath);
 		} else {
 			server_addr.sin_family = AF_INET;
@@ -275,19 +275,24 @@ void getFile(int sock, char *path, char *filename) {
 			recv(sock, rBuffer, BUFSIZE, 0);
 			server_addr.sin_port = htons(strToInt(rBuffer) * 10);
 
-			/* IMPORTANT: remove file if connection fails */
 			s = socket(PF_INET, SOCK_STREAM, 0);
-			assert(connect(s, (struct sockaddr*) &server_addr, sizeof(server_addr)) != -1);
+			rc = connect(s, (struct sockaddr*) &server_addr, sizeof(server_addr));
 
-			send(s, filename, BUFSIZE, 0);
+			if (rc != -1) {
+				send(s, filename, BUFSIZE, 0);
 
-			bzero(rBuffer, BUFSIZE);
-			while ((bytesRead = recv(s, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
-				assert((bytesWritten = fwrite(rBuffer, sizeof(char), BUFSIZE, fp)) == BUFSIZE);
-				totalBytesWritten += bytesWritten;
 				bzero(rBuffer, BUFSIZE);
+				while ((bytesRead = recv(s, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
+					assert((bytesWritten = fwrite(rBuffer, sizeof(char), BUFSIZE, fp)) == BUFSIZE);
+					totalBytesWritten += bytesWritten;
+					bzero(rBuffer, BUFSIZE);
+				}
+				fclose(fp);
+			} else {
+				printf("Error: couldn't connect to peer.\n");
+				remove(fullpath);
 			}
-			fclose(fp);
+
 
 			if (strcmp(rBuffer, "ERR") == 0) {
 				recv(sock, rBuffer, BUFSIZE, 0);
