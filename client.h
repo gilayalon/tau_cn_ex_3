@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <dirent.h>
 #include <assert.h>
 #include <netdb.h>
@@ -28,10 +29,11 @@ int in_process = 0;
 pthread_cond_t in_process_condition;
 pthread_cond_t all_complete_condition;
 
-void listDirectory(int socket, char *path);
-void getFileList(int socket);
-void getFile(int socket, char *path, char *filename);
-void *serverThread();
+void listDirectory(int sock, char *path);
+void getFileList(int sock);
+void getFile(int sock, char *path, char *filename);
+void *serverThread(void *param);
 void *sendFileThread(void *param);
+unsigned short int getListeningPort(int sock);
 
 #endif

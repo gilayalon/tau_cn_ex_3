@@ -12,9 +12,7 @@ void *sendFileThread(void *param) {
 	in_process++;
 	assert(pthread_mutex_unlock(&m) == 0);
 
-	/*get the requested file name */
 	recv(socket,filename, BUFSIZE, 0);
-	printf("client requested %s file\n", filename);
 
 	fullpath = (char *)malloc((strlen(path) + strlen(filename) + 1) * sizeof(char));
 	strcpy(fullpath, path);
@@ -41,26 +39,41 @@ void *sendFileThread(void *param) {
 	return NULL;
 }
 
-void *serverThread() {
+void *serverThread(void *param) {
 	int lSock, cSock;
 	pthread_t cThread;
 	unsigned int client;
+	struct timeval timeout;
+	fd_set read_fd_set, active_fd_set;
 	struct sockaddr_in server_addr, client_addr;
+	unsigned short int port = *(unsigned short int *)param;
 
 	lSock = socket(PF_INET, SOCK_STREAM, 0);
 
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(LISTEN_PORT);
+	server_addr.sin_port = port;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	bind(lSock, (struct sockaddr *)&server_addr, sizeof(server_addr));
 	listen(lSock, TCP_LISTEN_BACKLOG);
 
+	FD_ZERO (&active_fd_set);
+	FD_SET (lSock, &active_fd_set);
+
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+
 	while (!done) {
-		client = sizeof(client_addr);
-		cSock = accept(lSock, (struct sockaddr*)&client_addr, &client);
-		assert(pthread_create(&cThread, NULL, sendFileThread, &cSock) == 0);
-		sleep(2);
+		read_fd_set = active_fd_set;
+		assert(select(FD_SETSIZE, &read_fd_set, NULL, NULL, &timeout) != -1);
+
+		if (FD_ISSET(lSock, &read_fd_set)) {
+			printf("!\n");
+			client = sizeof(client_addr);
+			cSock = accept(lSock, (struct sockaddr*)&client_addr, &client);
+			assert(pthread_create(&cThread, NULL, sendFileThread, &cSock) == 0);
+			sleep(2);
+		}
 	}
 
 	if (in_process > 0) {
@@ -83,6 +96,7 @@ int main(int argc, char **argv) {
 	pthread_t sThread;
 	char input[USERIO];
 	char rBuffer[BUFSIZE];
+	unsigned short int lport;
 	char *hostname = "localhost";
 	struct sockaddr_in server_addr;
 	struct addrinfo hints, *result;
@@ -90,8 +104,6 @@ int main(int argc, char **argv) {
     assert(pthread_mutex_init(&m, NULL) == 0);
 	assert(pthread_cond_init(&in_process_condition, NULL) == 0);
 	assert(pthread_cond_init(&all_complete_condition, NULL) == 0);
-
-	assert(pthread_create(&sThread, NULL, serverThread, NULL) == 0);
 
 	if (argc == 4) {
 		port = strToInt(argv[3]);
@@ -123,6 +135,9 @@ int main(int argc, char **argv) {
 		bzero(rBuffer, BUFSIZE);
 		
 		listDirectory(sSock, path);
+
+		lport = getListeningPort(sSock);
+		assert(pthread_create(&sThread, NULL, serverThread, &lport) == 0);
 
 		while (go) {
 			if (fgets(input, USERIO, stdin) != NULL) {
@@ -186,25 +201,25 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void getFileList(int socket) {
+void getFileList(int sock) {
 	int bytesRead = 0;
 	char rBuffer[BUFSIZE];
 
-	send(socket, "DIR", CMD, 0);
+	send(sock, "DIR", CMD, 0);
 
-	while ((bytesRead = recv(socket, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
+	while ((bytesRead = recv(sock, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
 		rBuffer[bytesRead] = '\0';
 		printf("%s\n", rBuffer);
 	}
 }
 
-void listDirectory(int socket, char *path) {
+void listDirectory(int sock, char *path) {
 	DIR *dfd;
 	struct dirent *dp;
 	char filename[256];
 	struct stat statbuf;
 
-	send(socket, "LST", CMD, 0);
+	send(sock, "LST", CMD, 0);
 
 	dfd = opendir(path);
 	while ((dp = readdir(dfd)) != NULL) {
@@ -212,17 +227,17 @@ void listDirectory(int socket, char *path) {
 		stat(filename, &statbuf);
 
 		if ((statbuf.st_mode & S_IFMT) == S_IFREG) {
-			send(socket, dp->d_name, BUFSIZE, 0);
+			send(sock, dp->d_name, BUFSIZE, 0);
 		}
 	}
 
-	send(socket, "TRM", CMD, 0);
+	send(sock, "TRM", CMD, 0);
 	printf("list of local files was sent to the server\n");
 
 	closedir(dfd);
 }
 
-void getFile(int socket, char *path, char *filename) {
+void getFile(int sock, char *path, char *filename) {
 	int s;
 
 	FILE *fp = NULL;
@@ -243,13 +258,13 @@ void getFile(int socket, char *path, char *filename) {
 	if (fp == NULL) {
 		printf("Error: Couldn't open file.\n");
 	} else {
-		send(socket, "GET", CMD, 0);
-		send(socket, filename, BUFSIZE, 0);
+		send(sock, "GET", CMD, 0);
+		send(sock, filename, BUFSIZE, 0);
 
-		bytesRead = recv(socket, rBuffer, BUFSIZE, 0);
+		bytesRead = recv(sock, rBuffer, BUFSIZE, 0);
 		rBuffer[bytesRead] = '\0';
 		if (strcmp(rBuffer, "ERR") == 0) {
-			recv(socket, rBuffer, BUFSIZE, 0);
+			recv(sock, rBuffer, BUFSIZE, 0);
 			printf("Server Error: %s\n", rBuffer);
 			remove(fullpath);
 		} else {
@@ -257,9 +272,11 @@ void getFile(int socket, char *path, char *filename) {
 			server_addr.sin_addr.s_addr = inet_addr(rBuffer);
 			memset(&rBuffer, 0, sizeof(rBuffer));
 
-			recv(socket, rBuffer, BUFSIZE, 0);
-			server_addr.sin_port = strToInt(rBuffer);
+			recv(sock, rBuffer, BUFSIZE, 0);
+			server_addr.sin_port = htons(strToInt(rBuffer) * 10);
 
+			/* IMPORTANT: remove file if connection fails */
+			s = socket(PF_INET, SOCK_STREAM, 0);
 			assert(connect(s, (struct sockaddr*) &server_addr, sizeof(server_addr)) != -1);
 
 			send(s, filename, BUFSIZE, 0);
@@ -273,14 +290,14 @@ void getFile(int socket, char *path, char *filename) {
 			fclose(fp);
 
 			if (strcmp(rBuffer, "ERR") == 0) {
-				recv(socket, rBuffer, BUFSIZE, 0);
+				recv(sock, rBuffer, BUFSIZE, 0);
 				printf("Peer Error: %s.\n", rBuffer);
 				remove(fullpath);
 
-				send(socket, "ERR", CMD, 0);
-				send(socket, CLIENT_FILE_TRANSFER_FAILED, BUFSIZE, 0);
+				send(sock, "ERR", CMD, 0);
+				send(sock, CLIENT_FILE_TRANSFER_FAILED, BUFSIZE, 0);
 			} else {
-				send(socket, "TRM", CMD, 0);
+				send(sock, "TRM", CMD, 0);
 				printf("transfer complete\n");
 			}
 
@@ -289,4 +306,11 @@ void getFile(int socket, char *path, char *filename) {
 	}
 
 	free(fullpath);
+}
+
+unsigned short int getListeningPort(int sock) {
+	struct sockaddr_in sin;
+	socklen_t len = sizeof(sin);
+	assert(getsockname(sock, (struct sockaddr *)&sin, &len) != -1);
+	return ntohs(sin.sin_port * 10);
 }

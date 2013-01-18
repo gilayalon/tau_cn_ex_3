@@ -93,8 +93,6 @@ void registerClientFiles(int socket, int client_id) {
 		rBuffer[bytesRead] = '\0';
 		f = fl_createItem(rBuffer, NULL);
 
-		printf("%s\n", rBuffer);
-
 		assert(pthread_mutex_lock(&m) == 0);
 		mds_put(c, f);
 		assert(pthread_mutex_unlock(&m) == 0);
