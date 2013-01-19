@@ -20,10 +20,11 @@ void *sendFileThread(void *param) {
 
 	bytesSent = 0;
 	fp = fopen(fullpath, "r");
-	memset(sBuffer,'0', BUFSIZE);
-	while ((bytesRead = fread(sBuffer, sizeof(char), BUFSIZE, fp) > 0)){
-		bytesSent += send(socket, sBuffer, BUFSIZE,0);
-		memset(sBuffer, '0', BUFSIZE);
+
+	bzero(sBuffer, BUFSIZE);
+	while ((bytesRead = fread(sBuffer, sizeof(char), BUFSIZE, fp) > 0)) {
+		bytesSent += send(socket, sBuffer, BUFSIZE, 0);
+		bzero(sBuffer, BUFSIZE);
 	}
 	send (socket, "TRM", CMD, 0);
 	free (fullpath);
@@ -239,75 +240,63 @@ void listDirectory(int sock, char *path) {
 void getFile(int sock, char *path, char *filename) {
 	int s;
 	int rc;
-
 	FILE *fp = NULL;
-	char rBuffer[BUFSIZE];
-	char *fullpath = NULL;
-
+	int finished = 0;
 	int bytesRead = 0;
 	int bytesWritten = 0;
-	int totalBytesWritten = 0;
-
+	char rBuffer[BUFSIZE];
+	char *fullpath = NULL;
 	struct sockaddr_in server_addr;
 
 	assert((fullpath = (char *)malloc((strlen(path) + strlen(filename) + 1) * sizeof(char))) != NULL);
 	strcpy(fullpath, path);
 	strcat(fullpath, filename);
 
-	fp = fopen(fullpath, "wb+");
-	if (fp == NULL) {
-		printf("Error: Couldn't open file.\n");
+	send(sock, "GET", CMD, 0);
+	send(sock, filename, BUFSIZE, 0);
+
+	bytesRead = recv(sock, rBuffer, BUFSIZE, 0);
+	rBuffer[bytesRead] = '\0';
+	if (strcmp(rBuffer, "ERR") == 0) {
+		recv(sock, rBuffer, BUFSIZE, 0);
+		printf("%s\n", rBuffer);
 	} else {
-		send(sock, "GET", CMD, 0);
-		send(sock, filename, BUFSIZE, 0);
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_addr.s_addr = inet_addr(rBuffer);
+		memset(&rBuffer, 0, sizeof(rBuffer));
 
-		bytesRead = recv(sock, rBuffer, BUFSIZE, 0);
-		rBuffer[bytesRead] = '\0';
-		if (strcmp(rBuffer, "ERR") == 0) {
-			recv(sock, rBuffer, BUFSIZE, 0);
-			printf("%s\n", rBuffer);
-			remove(fullpath);
-		} else {
-			server_addr.sin_family = AF_INET;
-			server_addr.sin_addr.s_addr = inet_addr(rBuffer);
-			memset(&rBuffer, 0, sizeof(rBuffer));
+		recv(sock, rBuffer, BUFSIZE, 0);
+		server_addr.sin_port = htons(strToInt(rBuffer) * 10);
 
-			recv(sock, rBuffer, BUFSIZE, 0);
-			server_addr.sin_port = htons(strToInt(rBuffer) * 10);
-
+		if (server_addr.sin_port != getListeningPort(sock)) {
 			s = socket(PF_INET, SOCK_STREAM, 0);
 			rc = connect(s, (struct sockaddr*) &server_addr, sizeof(server_addr));
 
 			if (rc != -1) {
-				send(s, filename, BUFSIZE, 0);
+				fp = fopen(fullpath, "wb+");
+				if (fp == NULL) {
+					printf("Error: Couldn't open file.\n");
+				} else {
+					send(s, filename, BUFSIZE, 0);
 
-				bzero(rBuffer, BUFSIZE);
-				while ((bytesRead = recv(s, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
-					assert((bytesWritten = fwrite(rBuffer, sizeof(char), BUFSIZE, fp)) == BUFSIZE);
-					totalBytesWritten += bytesWritten;
 					bzero(rBuffer, BUFSIZE);
+					while ((bytesRead = recv(s, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
+						assert((bytesWritten = fwrite(rBuffer, sizeof(char), BUFSIZE, fp)) == BUFSIZE);
+						bzero(rBuffer, BUFSIZE);
+					}
+					fclose(fp);
 				}
-				fclose(fp);
 			} else {
 				printf("Error: couldn't connect to peer.\n");
-				remove(fullpath);
-			}
-
-
-			if (strcmp(rBuffer, "ERR") == 0) {
-				recv(sock, rBuffer, BUFSIZE, 0);
-				printf("Peer Error: %s.\n", rBuffer);
-				remove(fullpath);
-
-				send(sock, "ERR", CMD, 0);
-				send(sock, CLIENT_FILE_TRANSFER_FAILED, BUFSIZE, 0);
-			} else {
-				send(sock, "TRM", CMD, 0);
-				printf("transfer complete\n");
 			}
 
 			close(s);
+		} else {
+			printf("Error: file already exists in client folder.\n");
 		}
+
+		send(sock, "TRM", CMD, 0);
+		printf("transfer complete\n");
 	}
 
 	free(fullpath);
