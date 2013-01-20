@@ -1,5 +1,13 @@
 #include "server.h"
 
+/*
+ * Create a new thread to handle a client's communication:
+ * DIR: get a list of available files
+ * GET <filename>: get a host's IP that has a copy of the file
+ * LST: update the server's registry (MDS) with this client's files
+ * QUT: this client is turning off-line, clear this client's file records from the MDS
+ */
+
 void *client_thread(void *param) {
 	char rBuffer[CMD];
 	int connected = 1;
@@ -38,6 +46,10 @@ void *client_thread(void *param) {
 	return NULL;
 }
 
+/*
+ * Return a list of all files available throughout the
+ * entire sytem (i.e. Main-Server, client1, client2, ... , clientN
+ */
 void listFiles(int socket) {
 	int i;
 	char **fileList = mds_get_file_list();
@@ -50,6 +62,16 @@ void listFiles(int socket) {
 	free(fileList);
 }
 
+/*
+ * When a client sends a GET <filename> request the server
+ * searches the MDS to return a host that has a copy of the
+ * requested file, this information is then sent back to the
+ * client so he (the client) can connect to the host and get
+ * the actual copy of the file. once the transfer is complete
+ * the server updates it's records (MDS) that the client now
+ * has a copy of the file and he can now direct traffic to
+ * that client.
+ */
 void initFileTransaction(int socket, int client_id) {
 	client *c;
 	int bytesRead = 0;
@@ -82,6 +104,13 @@ void initFileTransaction(int socket, int client_id) {
 	}
 }
 
+/*
+ * When a new client connects to the server first we need to update
+ * the server's data structure (MDS) with the files and associate them
+ * to the specific client. This is done with the use of mds_put.
+ * since the server is multi-threaded we need to exercise thread safety
+ * there for the lock is needed when updateing the MDS
+ */
 void registerClientFiles(int socket, int client_id) {
 	file *f;
 	int bytesRead = 0;
@@ -99,6 +128,9 @@ void registerClientFiles(int socket, int client_id) {
 	}
 }
 
+/*
+ * Return a socket for TCP on the given port
+ */
 int create_socket(unsigned short int port) {
 	  int s;
 	  struct sockaddr_in name;
@@ -114,6 +146,17 @@ int create_socket(unsigned short int port) {
 	  return s;
 }
 
+
+/*
+ * The server listen's on the given port, when a client connects it
+ * sends a list of all available files in it's working direcroty to
+ * the server, the sever registers the files in it's data structure
+ * later on request it can retrieve the requested file's host thus
+ * letting the client connect to the host to get the requested file.
+ *
+ * The server handles each request with a different thread, when the
+ * thread's work is done it's automatically cleared from memory.
+ */
 int main(int argc, char **argv) {
 	int i;
 	client *c;

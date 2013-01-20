@@ -1,5 +1,14 @@
 #include "client.h"
 
+
+/*
+ * The thread method to send a file form the current peer
+ * another peer in the swarm
+ *
+ * we keep a global pointer "in_process" to indicate how many
+ * file transfers are currently under way. This is imporantant
+ * before we terminate the current peer.
+ */
 void *sendFileThread(void *param) {
 	FILE* fp;
 	char *fullpath;
@@ -40,6 +49,13 @@ void *sendFileThread(void *param) {
 	return NULL;
 }
 
+/*
+ * Client's "Server's thread", each client has it's own listening socket
+ * on which it accepts GET <filename> requests form other peer. we have
+ * decided to implement this behavior in a multi-threaded kind of way where
+ * each connection is assigned is't own unique thread which is later
+ * terminated at the end of the connection
+ */
 void *serverThread(void *param) {
 	int lSock, cSock;
 	pthread_t cThread;
@@ -81,11 +97,22 @@ void *serverThread(void *param) {
 		assert(pthread_cond_wait(&in_process_condition, &m) == 0);
 		assert(pthread_mutex_unlock(&m) == 0);
 	}
-
+	/* wait for all file transfers to complete before sutdown */
 	assert(pthread_cond_signal(&all_complete_condition) == 0);
 
 	return NULL;
 }
+
+/*
+ * main client method, this method keeps getting user input for
+ * files, sends the requests to the main server which then replises
+ * from here on end, the current client connects to another peer in
+ * the swarm to get he actual file.
+ *
+ * this method also invokes a listening thread to listen on a specific
+ * socket "LISTENING_SOCK" and then accepts connections on that socket
+ * and transfers files to other peers in the swarm.
+ */
 
 int main(int argc, char **argv) {
 	int go = 1;
@@ -201,6 +228,9 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
+/*
+ * get a file list form the server of all available files
+ */
 void getFileList(int sock) {
 	int bytesRead = 0;
 	char rBuffer[BUFSIZE];
@@ -213,6 +243,10 @@ void getFileList(int sock) {
 	}
 }
 
+/*
+ * On initial connection to the server, send this client's working
+ * dirctory's files to the main server.
+ */
 void listDirectory(int sock, char *path) {
 	DIR *dfd;
 	struct dirent *dp;
@@ -237,6 +271,13 @@ void listDirectory(int sock, char *path) {
 	closedir(dfd);
 }
 
+/*
+ * GET a certain file form a peer in the swarm, i.e. connect to
+ * the main server to get the i.p. then determine the peer's
+ * listening port number and get the file from the peer. When
+ * the transfer completes send message to the sever to update
+ * the records to show the file is also available form this client.
+ */
 void getFile(int sock, char *path, char *filename) {
 	int s;
 	int rc;
@@ -302,6 +343,13 @@ void getFile(int sock, char *path, char *filename) {
 	free(fullpath);
 }
 
+/*
+ * Get the listening port of the peer, when running the system
+ * over different IP's there is no problem but when both server
+ * and peers are all hosted on the same IP we need a way to get
+ * the dynamically allocated listening port to connect for file
+ * transfer.
+ */
 unsigned short int getListeningPort(int sock) {
 	struct sockaddr_in sin;
 	socklen_t len = sizeof(sin);
