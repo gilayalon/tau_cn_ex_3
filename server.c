@@ -6,8 +6,8 @@ void *client_thread(void *param) {
 	int id = *(int *)param;
 	int cSock = mds_get_client(id)->socket_fd;
 
-	assert(pthread_mutex_lock(&m) == 0);
 	while (!done && connected) {
+		assert(pthread_mutex_lock(&m) == 0);
 		assert(pthread_cond_wait(&pending_task_condition, &m) == 0);
 		assert(pthread_mutex_unlock(&m) == 0);
 
@@ -33,8 +33,6 @@ void *client_thread(void *param) {
 				connected = 0;
 			}
 		}
-
-		assert(pthread_mutex_lock(&m) == 0);
 	}
 
 	return NULL;
@@ -63,9 +61,9 @@ void initFileTransaction(int socket, int client_id) {
 	strcpy(filename, rBuffer);
 	memset(&rBuffer, 0, sizeof(rBuffer));
 
-	c = mds_get(rBuffer);
+	c = mds_get(filename);
 	if (c != NULL) {
-		send(socket, (char *)c->address->sin_addr.s_addr, BUFSIZE, 0);
+		send(socket, inet_ntoa(c->address->sin_addr), BUFSIZE, 0);
 		sprintf(rBuffer, "%d", c->address->sin_port);
 		send(socket, rBuffer, BUFSIZE, 0);
 
@@ -94,8 +92,6 @@ void registerClientFiles(int socket, int client_id) {
 	while ((bytesRead = recv(socket, rBuffer, BUFSIZE, 0)) == BUFSIZE) {
 		rBuffer[bytesRead] = '\0';
 		f = fl_createItem(rBuffer, NULL);
-
-		printf("%s\n", rBuffer);
 
 		assert(pthread_mutex_lock(&m) == 0);
 		mds_put(c, f);
